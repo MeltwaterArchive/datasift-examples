@@ -14,5 +14,5 @@ Examples of performing recordings and anlysis using DataSift PYLON.
 
 ### iPython Notebooks
 
-See [pylon/iPython](pylon/iPython)
+See [pylon/ipython](pylon/ipython)
 
