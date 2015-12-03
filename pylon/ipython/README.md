@@ -5,8 +5,8 @@ This repository contains example iPython notebooks when working with PYLON on th
 ## Dependencies
 
 * Python 2.7.6
-* [iPython 3.0](http://ipython.org/)
-* datasift (2.1.0)
+* [iPython 4.0](http://ipython.org/)
+* [DataSift Python client library](http://dev.datasift.com/tools/client-libraries)
 
 ## Instructions
 
