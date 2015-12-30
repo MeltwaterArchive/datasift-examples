@@ -216,3 +216,53 @@ def  chart_agegender_baselined(nested_audience, nested_baseline, normalized=True
         axes[2].set_xlabel('index')
         axes[2].set_yticklabels(['' for item in axes[2].get_yticklabels()])
         gs.tight_layout(fig, rect=[0, 0.03, 1, 0.95])
+
+
+# Plots a time series, aggregated by count of interactions in each hour
+def chart_aggregated_hourly_interactions(ts_result):
+
+    # Check result is not redacted
+    if not ts_result['analysis']['redacted']:
+
+        # Extract result data to dataframe
+        df = pd.DataFrame.from_records(ts_result['analysis']['results'],index='key',exclude=['unique_authors'])
+        df.index=df.index.map(datetime.datetime.fromtimestamp)
+
+        # Aggregate results by hour
+        df = pd.DataFrame(df.groupby(df.index.map(lambda t: t.hour)).interactions.sum())
+
+        # Sort the data and plot a chart
+        df.sort_index().plot(kind='bar', figsize=(14,6))
+
+# Plots a time series, aggregated by count of interaction in each hour, set against a baseline audience
+def chart_baselined_aggregated_hourly_interactions(ts_audience, ts_baseline, normalized=True):
+
+    # Check result is not redacted
+    if not ts_audience['analysis']['redacted'] and not ts_baseline['analysis']['redacted']:
+
+        # Extract result data to dataframe
+        df_audience = pd.DataFrame.from_records(ts_audience['analysis']['results'],index='key',exclude=['unique_authors'])
+        df_audience.index=df_audience.index.map(datetime.datetime.fromtimestamp)
+        df_baseline = pd.DataFrame.from_records(ts_baseline['analysis']['results'],index='key',exclude=['unique_authors'])
+        df_baseline.index=df_baseline.index.map(datetime.datetime.fromtimestamp)
+
+        # Aggregate results by hour
+        df_audience = pd.DataFrame(df_audience.groupby(df_audience.index.map(lambda t: t.hour)).interactions.sum())
+        df_baseline = pd.DataFrame(df_baseline.groupby(df_baseline.index.map(lambda t: t.hour)).interactions.sum())
+
+        # If normalization is specified normalize each dataframe before plotting
+        if normalized:
+            df_audience = normalize_results(df_audience, 'interactions')
+            df_baseline = normalize_results(df_baseline, 'interactions')
+
+        df_plot = pd.concat([df_audience, df_baseline], axis=1, keys=['audience', 'baseline'])
+
+        # Choose which column to plot depending on whether the data has been normalized
+        key = 'interactions'
+        if normalized:
+            key = 'normalized'
+
+        # Sort the data and plot a chart
+        fig, axes = plt.subplots(nrows=1, ncols=1, figsize=(14,6))
+        df_plot[('baseline',key)].sort_index().plot(kind='bar',ax=axes,color='silver',width=0.8,linewidth=0)
+        df_plot[('audience',key)].sort_index().plot(kind='bar',ax=axes)
