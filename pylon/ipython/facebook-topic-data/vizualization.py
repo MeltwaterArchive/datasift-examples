@@ -6,12 +6,23 @@ import matplotlib.pyplot as plt
 def normalize_val(total, val):
     return float(val) / total
 
-# Normalizes a column of a dataframe, so all values sum to 1
-def normalize_results(df, key):
-    df_copy = pd.DataFrame.copy(df,deep=True)
-    total = df_copy.sum()
-    df_copy['normalized'] = df.apply(lambda row: normalize_val(total, row[key]), axis=1)
-    return df_copy
+# Normalizes a collection of dataframes, so all values across the dataframes sum to 1
+def normalize_results(dfs, key):
+
+    result = []
+    total = 0
+
+    # Sum all values in all dataframes
+    for df in dfs:
+        total += df[key].sum()
+
+    # Normalize all dataframes by dividing by total sum above
+    for df in dfs:
+        df_copy = pd.DataFrame.copy(df,deep=True)
+        df_copy['normalized'] = df.apply(lambda row: normalize_val(total, row[key]), axis=1)
+        result.append(df_copy)
+
+    return result
 
 # Plots a timeseries from an timeseries API response
 def chart_timeseries(ts_result):
@@ -92,8 +103,8 @@ def chart_timeseries_baseline_interactions(ts_audience, ts_baseline, normalized=
 
         # If normalization is specified normalize each dataframe before plotting
         if normalized:
-            df_audience = normalize_results(df_audience, 'interactions')
-            df_baseline = normalize_results(df_baseline, 'interactions')
+            df_audience = normalize_results([df_audience], 'interactions')[0]
+            df_baseline = normalize_results([df_baseline], 'interactions')[0]
 
             # Drop data we don't want to plot
             df_audience = df_audience.drop('interactions',1)
@@ -117,8 +128,8 @@ def chart_freqdist_baseline_uniqueauthors(fd_audience, fd_baseline, normalized=T
 
         # If normalization is specified normalize each dataframe before plotting
         if normalized:
-            df_audience = normalize_results(df_audience, 'unique_authors')
-            df_baseline = normalize_results(df_baseline, 'unique_authors')
+            df_audience = normalize_results([df_audience], 'unique_authors')[0]
+            df_baseline = normalize_results([df_baseline], 'unique_authors')[0]
 
         df_plot = pd.concat([df_audience, df_baseline], axis=1, keys=['audience', 'baseline'])
 
@@ -144,8 +155,9 @@ def  chart_agegender_baselined(nested_audience, nested_baseline, normalized=True
             nested_audience['analysis']['results'][1]['child']['results'],index='key',exclude=['interactions'])
 
         if normalized:
-            df_audience_male = normalize_results(df_audience_male, 'unique_authors')
-            df_audience_female = normalize_results(df_audience_female, 'unique_authors')
+            normal = normalize_results([df_audience_male,df_audience_female], 'unique_authors')
+            df_audience_male = normal[0]
+            df_audience_female = normal[1]
 
         df_audience = pd.concat([df_audience_male, df_audience_female], axis=1, keys=['male','female'])
 
@@ -157,8 +169,9 @@ def  chart_agegender_baselined(nested_audience, nested_baseline, normalized=True
             nested_baseline['analysis']['results'][1]['child']['results'],index='key',exclude=['interactions'])
 
         if normalized:
-            df_baseline_male = normalize_results(df_baseline_male, 'unique_authors')
-            df_baseline_female = normalize_results(df_baseline_female, 'unique_authors')
+            normal = normalize_results([df_baseline_male,df_baseline_female], 'unique_authors')
+            df_baseline_male = normal[0]
+            df_baseline_female = normal[1]
 
         df_baseline = pd.concat([df_baseline_male, df_baseline_female], axis=1, keys=['male','female'])
 
@@ -176,7 +189,7 @@ def  chart_agegender_baselined(nested_audience, nested_baseline, normalized=True
         max_xlim=max(df_audience[('male', key)].max(),
             df_audience[('female', key)].max(),
             df_baseline[('male', key)].max(),
-            df_baseline[('male', key)].max())
+            df_baseline[('female', key)].max())
 
         # Plot pyramid
         female_subplot=df_baseline[('female',key)].plot(kind='barh',ax=axes[0],color='silver',width=0.8,linewidth=0)
@@ -217,7 +230,6 @@ def  chart_agegender_baselined(nested_audience, nested_baseline, normalized=True
         axes[2].set_yticklabels(['' for item in axes[2].get_yticklabels()])
         gs.tight_layout(fig, rect=[0, 0.03, 1, 0.95])
 
-
 # Plots a time series, aggregated by count of interactions in each hour
 def chart_aggregated_hourly_interactions(ts_result):
 
@@ -252,8 +264,8 @@ def chart_baselined_aggregated_hourly_interactions(ts_audience, ts_baseline, nor
 
         # If normalization is specified normalize each dataframe before plotting
         if normalized:
-            df_audience = normalize_results(df_audience, 'interactions')
-            df_baseline = normalize_results(df_baseline, 'interactions')
+            df_audience = normalize_results([df_audience], 'interactions')[0]
+            df_baseline = normalize_results([df_baseline], 'interactions')[0]
 
         df_plot = pd.concat([df_audience, df_baseline], axis=1, keys=['audience', 'baseline'])
 
